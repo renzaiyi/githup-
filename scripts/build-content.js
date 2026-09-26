@@ -88,64 +88,23 @@ function topLevelNames(code) {
 
 /* ------------------------------------------------------------------ */
 
-const seen = new Set();
-const chunks = [];
-const report = [];
+// 注意：模块迭代逻辑已全部收进 buildBundle()（本文件下方导出），
+// 这里不再重复一份 —— check.js 也调用同一个函数做"产物是否同步"的比对，
+// 保证只有一份构建实现。
 
-for (const rel of MODULES) {
-  const file = join(ROOT, rel);
-  if (!existsSync(file)) {
-    console.error(`\x1b[31m缺少模块：${rel}\x1b[0m`);
-    process.exit(1);
-  }
-  const original = readFileSync(file, 'utf8');
-  const code = strip(original, rel);
-
-  // 去掉这个模块的文件头注释块之外的多余空行，保持产物可读
-  const body = code.replace(/\n{3,}/g, '\n\n').trim();
-  if (!body) continue;
-
-  // 检测重复声明（不同模块导出同名标识符 → 打包后会重复声明报错）
-  const names = topLevelNames(body);
-  const dupes = [...names].filter((n) => seen.has(n));
-  if (dupes.length) {
-    console.error(
-      `\x1b[33m! ${rel} 与前面的模块重名：${dupes.join(', ')}` +
-        `\n  打包后会变成重复声明。请给其中一个改名。\x1b[0m`
-    );
-  }
-  for (const n of names) seen.add(n);
-
-  report.push({ rel, bytes: body.length, decls: names.size });
-  chunks.push(
-    `/* ============================================================\n` +
-      ` * 来自 ${rel}\n` +
-      ` * ============================================================ */\n${body}`
-  );
-}
-
-const banner = `/**
- * GitHub 智能翻译 · 内容脚本（自动生成，请勿直接编辑）
+/**
+ * 构建产物内容（纯函数，不写盘）。
  *
- * 由 scripts/build-content.js 从以下模块打包而成：
-${report.map((r) => ` *   - ${r.rel}  (${r.decls} 个顶层声明, ${r.bytes} 字节)`).join('\n')}
+ * 【为什么导出这个】
+ * scripts/check.js 需要"把源码重新打包一遍、与已提交的产物比对内容"，
+ * 以此判断产物是否与源码同步。
+ * 如果 check.js 自己再实现一份打包逻辑，就出现了第二份真相源 ——
+ * 两份实现迟早不一致，那种"检查通过但产物其实是错的"最危险。
+ * 所以这里导出唯一的构建实现，谁要构建都调它。
  *
- * 【为什么要打包成单文件】
- * manifest 用 "type": "module" 时内容脚本是异步加载的，会导致消息监听器
- * 注册晚于 popup 发消息（真机实测症状：「没有运行扩展」）。打包成经典脚本后
- * 同步执行、零 import，把这类失败模式整个消除。
- *
- * 修改源码后请重新运行：node scripts/build-content.js
+ * @param {{ expose?: boolean }} [options]
+ * @returns {{ bundle: string, exposed: string|null, report: Array }}
  */
-(function () {
-  'use strict';
-
-`;
-
-const footer = `
-})();
-`;
-
 /**
  * 供真机验证用的暴露尾巴。
  *
@@ -180,27 +139,102 @@ const exposeFooter = `
 })();
 `;
 
-const expose = process.argv.includes('--expose');
+export function buildBundle(options = {}) {
+  const seen = new Set();
+  const chunks = [];
+  const report = [];
 
-const out = banner + chunks.join('\n\n') + footer;
-const outFile = join(ROOT, 'src/content/bundle.js');
-writeFileSync(outFile, out, 'utf8');
+  for (const rel of MODULES) {
+    const file = join(ROOT, rel);
+    if (!existsSync(file)) {
+      throw new Error(`缺少模块：${rel}`);
+    }
+    const original = readFileSync(file, 'utf8');
+    const code = strip(original, rel);
 
-console.log('\n=== 打包完成 ===');
-for (const r of report) {
-  console.log(`  ${r.rel.padEnd(34)} ${String(r.decls).padStart(3)} 个声明  ${String(r.bytes).padStart(6)} 字节`);
+    // 去掉多余空行，保持产物可读
+    const body = code.replace(/\n{3,}/g, '\n\n').trim();
+    if (!body) continue;
+
+    // 检测重复声明（不同模块导出同名标识符 → 打包后会重复声明报错）
+    const names = topLevelNames(body);
+    const dupes = [...names].filter((n) => seen.has(n));
+    if (dupes.length) {
+      throw new Error(
+        `${rel} 与前面的模块重名：${dupes.join(', ')} —— 打包后会变成重复声明，请改名`
+      );
+    }
+    for (const n of names) seen.add(n);
+
+    report.push({ rel, bytes: body.length, decls: names.size });
+    chunks.push(
+      `/* ============================================================\n` +
+        ` * 来自 ${rel}\n` +
+        ` * ============================================================ */\n${body}`
+    );
+  }
+
+  const banner = `/**
+ * GitHub 智能翻译 · 内容脚本（自动生成，请勿直接编辑）
+ *
+ * 由 scripts/build-content.js 从以下模块打包而成：
+${report.map((r) => ` *   - ${r.rel}  (${r.decls} 个顶层声明, ${r.bytes} 字节)`).join('\n')}
+ *
+ * 【为什么要打包成单文件】
+ * manifest 用 "type": "module" 时内容脚本是异步加载的，会导致消息监听器
+ * 注册晚于 popup 发消息（真机实测症状：「没有运行扩展」）。打包成经典脚本后
+ * 同步执行、零 import，把这类失败模式整个消除。
+ *
+ * 修改源码后请重新运行：npm run build
+ */
+(function () {
+  'use strict';
+
+`;
+
+  const footer = `
+})();
+`;
+
+  const bundle = banner + chunks.join('\n\n') + footer;
+  const exposed = options.expose ? banner + chunks.join('\n\n') + exposeFooter : null;
+
+  return { bundle, exposed, report, declCount: seen.size };
 }
-console.log(`\n  产物: src/content/bundle.js  (${out.length} 字节)`);
-console.log(`  顶层标识符去重: ${seen.size} 个`);
 
-if (expose) {
-  const exposedOut = banner + chunks.join('\n\n') + exposeFooter;
-  const exposedFile = join(ROOT, 'src/content/bundle.exposed.js');
-  writeFileSync(exposedFile, exposedOut, 'utf8');
-  console.log(
-    `  验证产物: src/content/bundle.exposed.js  (${exposedOut.length} 字节)` +
-      `\n     含 window.__GHST__ 暴露层，仅供真机验证，不进 manifest。`
-  );
+
+/**
+ * 只有被直接执行时才写盘。
+ *
+ * check.js 会 import 本文件来复用 buildBundle()，
+ * 那时绝不能让下面这段副作用代码跑起来（否则"检查"会顺带改写产物，
+ * 检查就永远通过了 —— 这正是要避免的自欺欺人）。
+ */
+const isMainModule =
+  process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (isMainModule) {
+  const expose = process.argv.includes('--expose');
+  const { bundle, exposed, report, declCount } = buildBundle({ expose });
+
+  writeFileSync(join(ROOT, 'src/content/bundle.js'), bundle, 'utf8');
+
+  console.log('\n=== 打包完成 ===');
+  for (const r of report) {
+    console.log(
+      `  ${r.rel.padEnd(34)} ${String(r.decls).padStart(3)} 个声明  ${String(r.bytes).padStart(6)} 字节`
+    );
+  }
+  console.log(`\n  产物: src/content/bundle.js  (${bundle.length} 字节)`);
+  console.log(`  顶层标识符去重: ${declCount} 个`);
+
+  if (exposed) {
+    writeFileSync(join(ROOT, 'src/content/bundle.exposed.js'), exposed, 'utf8');
+    console.log(
+      `  验证产物: src/content/bundle.exposed.js  (${exposed.length} 字节)` +
+        `\n     含 window.__GHST__ 暴露层，仅供真机验证，不进 manifest。`
+    );
+  }
+
+  console.log('\n注意：bundle.js 是生成物，修改源码后必须重新运行 npm run build。');
 }
-
-console.log('\n注意：bundle.js 是生成物，修改源码后必须重新运行本脚本。');

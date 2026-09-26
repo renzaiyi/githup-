@@ -193,21 +193,51 @@ const SOURCES = [
 ];
 
 if (!existsSync(BUNDLE)) {
-  bad('缺少 src/content/bundle.js —— 请运行 node scripts/build-content.js');
+  bad('缺少 src/content/bundle.js —— 请运行 npm run build');
 } else {
-  const bundleStat = statSync(BUNDLE);
   const bundleCode = readFileSync(BUNDLE, 'utf8');
 
-  // 关键：产物比任一源文件旧 → 改了源码但忘了重新打包
-  const stale = SOURCES.filter((rel) => {
-    const p = join(ROOT, rel);
-    return existsSync(p) && statSync(p).mtimeMs > bundleStat.mtimeMs;
-  });
-  if (stale.length) {
-    bad(`${stale.length} 个源文件比 bundle.js 新 —— 产物已过期，请重新运行 node scripts/build-content.js`);
-    for (const s of stale) console.log(`        ${s}`);
+  // ---- 产物与源码是否同步：把源码重新打包，直接比对内容 ----
+  //
+  // 【为什么不能用 mtime】
+  // 最初这里比的是"源文件是否比 bundle.js 新"。这在开发机上够用，
+  // 但在全新 clone 里必然误报：git 检出时所有文件 mtime 几乎相同，
+  // bundle.js 只要早几毫秒就会被判为"过期"，而内容其实是同步的。
+  // （这个问题就是在模拟 clone 时被抓到的。）
+  //
+  // 现在直接调用 build-content.js 导出的 buildBundle()（构建逻辑的唯一实现），
+  // 在内存里重新打包再比对 —— 只取决于源码内容，与文件时间无关。
+  // 注意 buildBundle 是纯函数、不写盘，所以"检查"不会顺带修改产物。
+  let fresh = null;
+  let compareError = null;
+  try {
+    const { buildBundle } = await import('./build-content.js');
+    fresh = buildBundle({ expose: false }).bundle;
+  } catch (e) {
+    compareError = e;
+  }
+
+  if (compareError) {
+    bad(`无法重建产物做比对：${compareError.message}`);
+  } else if (fresh === bundleCode) {
+    ok('bundle.js 与源码完全同步（内容比对，不受文件时间影响）');
   } else {
-    ok('bundle.js 比所有源文件都新（未过期）');
+    bad('bundle.js 与源码不同步 —— 请运行 npm run build 并重新提交');
+    const a = bundleCode.split('\n');
+    const b = fresh.split('\n');
+    let firstDiff = -1;
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if (a[i] !== b[i]) {
+        firstDiff = i + 1;
+        break;
+      }
+    }
+    console.log(`        首个差异在第 ${firstDiff} 行`);
+    console.log(`        提交的产物 ${a.length} 行 vs 重建的 ${b.length} 行`);
+    if (firstDiff > 0) {
+      console.log(`        提交：${(a[firstDiff - 1] || '').slice(0, 70)}`);
+      console.log(`        重建：${(b[firstDiff - 1] || '').slice(0, 70)}`);
+    }
   }
 
   // 产物不能残留 import/export，否则经典脚本会语法错误
@@ -226,7 +256,7 @@ if (!existsSync(BUNDLE)) {
     bad('bundle.js 里找不到 onMessage.addListener —— popup 将无法与页面通信');
   }
 
-  ok(`bundle.js 体积 ${(bundleStat.size / 1024).toFixed(1)} KB`);
+  ok(`bundle.js 体积 ${(bundleCode.length / 1024).toFixed(1)} KB`);
 }
 
 // manifest 必须指向 bundle.js 且不能带 type:module（否则又回到异步加载的坑）

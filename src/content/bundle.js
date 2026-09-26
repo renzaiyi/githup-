@@ -19,7 +19,7 @@
  * 注册晚于 popup 发消息（真机实测症状：「没有运行扩展」）。打包成经典脚本后
  * 同步执行、零 import，把这类失败模式整个消除。
  *
- * 修改源码后请重新运行：node scripts/build-content.js
+ * 修改源码后请重新运行：npm run build
  */
 (function () {
   'use strict';
