@@ -293,7 +293,11 @@ if (existsSync(exposed)) {
     warn('bundle.exposed.js 存在但没有 __GHST__ 暴露层，真机验证会失败');
   }
 } else {
-  warn('缺少 bundle.exposed.js —— 无法做真机验证。运行：node scripts/build-content.js --expose');
+  // 这是**正常状态**，不是问题：bundle.exposed.js 被 .gitignore 排除，
+  // 是给真机验证脚本用的临时产物，全新 clone 里本来就不该有。
+  // 所以这里报"信息"而不是"警告" —— 否则每个新 clone 的人都会看到一条
+  // 需要解释的黄色提醒，属于噪音。
+  ok('未生成 bundle.exposed.js（正常：验证专用产物不入库，需要时 npm run build 生成）');
 }
 
 console.log('\n=== 9. 文件清单 ===');
