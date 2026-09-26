@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub 智能翻译",
+  "version": "0.4.0",
+  "description": "GitHub 网页智能翻译：用 LLM 意译正文与搜索结果，保留代码与 Markdown 结构，绝不触碰你键入的英文。",
+
+  "permissions": ["storage", "unlimitedStorage"],
+
+  "host_permissions": [
+    "https://api.deepseek.com/*"
+  ],
+
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["src/content/bundle.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "GitHub 智能翻译",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

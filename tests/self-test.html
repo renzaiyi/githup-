@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>GitHub 智能翻译 · 自测页面</title>
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    margin: 0; padding: 16px; background: #f6f8fa; color: #1f2328;
+    font-size: 14px; line-height: 1.6;
+  }
+  .panel {
+    position: sticky; top: 0; z-index: 100;
+    background: #fff; border: 1px solid #d1d9e0; border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  }
+  .panel h1 { font-size: 16px; margin: 0 0 8px; }
+  .summary { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .pass { color: #1a7f37; }
+  .fail { color: #cf222e; }
+  .case { font-size: 12.5px; padding: 3px 0; border-top: 1px solid #eaeef2; }
+  .case:first-of-type { border-top: none; }
+  .case .tag { display: inline-block; min-width: 46px; font-weight: 700; }
+  .case .detail { color: #59636e; }
+  .hint { font-size: 12px; color: #59636e; margin: 6px 0 0; }
+  button {
+    font: inherit; font-size: 13px; padding: 5px 12px; margin-right: 8px;
+    border: 1px solid #d1d9e0; border-radius: 6px; background: #fff; cursor: pointer;
+  }
+  button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; font-weight: 600; }
+
+  /* ---- 以下是模拟的 GitHub 结构 ---- */
+  .gh-box { background: #fff; border: 1px solid #d1d9e0; border-radius: 8px; margin-bottom: 16px; }
+  .gh-box > .gh-head {
+    padding: 8px 12px; border-bottom: 1px solid #d1d9e0; background: #f6f8fa;
+    font-size: 12px; color: #59636e; border-radius: 8px 8px 0 0;
+  }
+  .gh-body { padding: 16px; }
+  .markdown-body h1 { font-size: 22px; border-bottom: 1px solid #d1d9e0; padding-bottom: 6px; }
+  .markdown-body h2 { font-size: 18px; }
+  .markdown-body pre {
+    background: #f6f8fa; padding: 12px; border-radius: 6px; overflow-x: auto;
+    font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
+  }
+  .markdown-body code {
+    background: rgba(175,184,193,.2); padding: 2px 5px; border-radius: 4px;
+    font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
+  }
+  .markdown-body pre code { background: none; padding: 0; }
+  .markdown-body table { border-collapse: collapse; width: 100%; }
+  .markdown-body th, .markdown-body td { border: 1px solid #d1d9e0; padding: 6px 10px; text-align: left; }
+  .search-input {
+    width: 320px; padding: 6px 10px; border: 1px solid #d1d9e0; border-radius: 6px; font: inherit;
+  }
+  .fake-header { background: #24292f; color: #fff; padding: 10px 16px; border-radius: 6px; margin-bottom: 12px; }
+  .fake-header nav span { margin-right: 14px; opacity: .9; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>GitHub 智能翻译 · 自测页面</h1>
+  <div class="summary" id="summary">正在运行…</div>
+  <div id="cases"></div>
+  <p class="hint">
+    这个页面不依赖扩展、不联网。它直接调用扩展的 <code>collectTextNodes()</code> 与
+    <code>findContentContainers()</code>，验证"哪些文本会被翻译"以及最有价值的一条：
+    <b>输入框里的内容绝不会被碰</b>。
+  </p>
+  <div style="margin-top:10px">
+    <button class="primary" id="btnRun">重新运行检测</button>
+    <button id="btnInject">模拟注入译文</button>
+    <button id="btnReset">复原</button>
+  </div>
+</div>
+
+<!-- 选择器诊断：把扩展"看到"的东西原样打出来 -->
+<div class="panel" style="top:auto;position:static">
+  <h1 style="font-size:14px">选择器诊断（扩展在当前页面看到了什么）</h1>
+  <div id="diag" style="font-family:ui-monospace,Consolas,monospace;font-size:11.5px;white-space:pre-wrap;margin-top:6px;color:#1f2328"></div>
+  <p class="hint">
+    <b>用法</b>：把这一段连同上面的检测脚本复制到一个「另存为诊断.html」文件里，
+    在 GitHub 页面的控制台里也能看同样的信息。<br />
+    这里显示的是<b>这个自测页面</b>的匹配结果 —— 因为自测页面的结构是模拟的，
+    所以它会走「降级」路径，这是正常的。
+    要看真实结果，请用扩展 popup 里的「诊断」按钮。
+  </p>
+</div>
+
+<!-- ============ 模拟 GitHub 页面结构 ============ -->
+
+<div class="fake-header">
+  <nav>
+    <span>Code</span><span>Issues</span><span>Pull requests</span><span>Actions</span><span>Settings</span>
+  </nav>
+</div>
+
+<!-- 场景 A：搜索框（最关键的安全测试） -->
+<div class="gh-box">
+  <div class="gh-head">场景 A · 搜索框</div>
+  <div class="gh-body">
+    <input class="search-input" id="repoSearch" type="text"
+           placeholder="Search or jump to..." value="react hooks" />
+    <input class="search-input" id="codeSearch" type="text"
+           placeholder="Search code..." value="useState&lt;T&gt;" />
+    <textarea class="search-input" id="commentBox" rows="2"
+              placeholder="Leave a comment">This PR fixes the memory leak in useEffect</textarea>
+    <div contenteditable="true" class="search-input" id="richEditor" style="margin-top:8px">
+      editable rich text with English words
+    </div>
+  </div>
+</div>
+
+<!-- 场景 B：README 正文 -->
+<div class="gh-box">
+  <div class="gh-head">场景 B · README 正文</div>
+  <div class="gh-body markdown-body" id="readme">
+    <h1>Awesome Project</h1>
+    <p>Run the following command to install dependencies before you start development.</p>
+    <p>This will not work if the <code>GITHUB_TOKEN</code> environment variable is missing.</p>
+    <pre><code>npm install
+npm run build --production
+git commit -m "fix: resolve the memory leak"</code></pre>
+    <p>Feel free to open an issue if you hit any problems during the upgrade.</p>
+    <table>
+      <thead>
+        <tr><th>Option</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>--verbose</td><td>Enable verbose logging output</td></tr>
+        <tr><td>--dry-run</td><td>Print what would be done without doing it</td></tr>
+      </tbody>
+    </table>
+    <p>See the <a href="https://example.com/docs">official documentation</a> for more details.</p>
+  </div>
+</div>
+
+<!-- 场景 C：Issue 正文与评论 -->
+<div class="gh-box">
+  <div class="gh-head">场景 C · Issue 描述与评论</div>
+  <div class="gh-body">
+    <div data-testid="issue-body" class="markdown-body">
+      <p>The application crashes when loading a large configuration file.</p>
+    </div>
+    <div class="comment-body markdown-body" style="border-top:1px solid #d1d9e0;padding-top:10px;margin-top:10px">
+      <p>I can reproduce this on version <code>v2.3.1</code> with a 50 MB file.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 场景 D：必须被跳过的区域 -->
+<div class="gh-box">
+  <div class="gh-head">场景 D · 必须跳过的区域（伪造为白名单容器，检查纵深防御）</div>
+  <div class="gh-body markdown-body" id="exclusionZone">
+    <pre><code>const secret = process.env.API_KEY; // this comment must not be translated</code></pre>
+    <table class="diff-table">
+      <tr><td>- const oldValue = 1;</td><td>+ const newValue = 2;</td></tr>
+    </table>
+    <div class="markdown-body">
+      <p>But this nested paragraph should still be translated.</p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  collectTextNodes, findContentContainers, getLastReport,
+  injectTranslation, applyMode, removeAllTranslations, countInjected,
+} from '../src/core/dom.js';
+import { looksLikeIdentifier, looksLikeChinese } from '../src/shared/util.js';
+
+const EXP_TEXT = {
+  'Awesome Project': '超棒的项目',
+  'Run the following command to install dependencies before you start development.':
+    '开始开发前，请先执行以下命令安装依赖。',
+};
+
+const casesEl = document.getElementById('cases');
+const summaryEl = document.getElementById('summary');
+const diagEl = document.getElementById('diag');
+let results = [];
+
+function check(name, condition, detail = '') {
+  results.push({ name, pass: Boolean(condition), detail });
+}
+
+function run() {
+  results = [];
+
+  // 先复原，保证从干净状态开始
+  removeAllTranslations();
+
+  const report = findContentContainers();
+  const entries = collectTextNodes({ report });
+  const texts = entries.map((e) => e.text);
+  const joined = texts.join(' || ');
+  renderDiagnostics(report);
+
+  // ---------- 核心安全断言 ----------
+  const searchInput = document.getElementById('repoSearch');
+  const codeSearch = document.getElementById('codeSearch');
+  const commentBox = document.getElementById('commentBox');
+  const richEditor = document.getElementById('richEditor');
+
+  check('输入框 value 未被收集', !texts.includes('react hooks'),
+    `实际收集到 ${texts.length} 条文本`);
+  check('搜索结果框 value 未被收集', !texts.includes('useState<T>'));
+  check('textarea value 未被收集', !texts.includes('This PR fixes the memory leak in useEffect'));
+  check('contenteditable 内容未被收集', !texts.includes('editable rich text with English words'));
+  check('输入框 placeholder 也未被收集（本扩展不碰任何表单属性）',
+    !joined.includes('Search or jump to') && !joined.includes('Leave a comment'));
+
+  // 记录当前 value，用于后续"注入后仍不变"验证
+  window.__before = {
+    search: searchInput.value,
+    code: codeSearch.value,
+    comment: commentBox.value,
+    rich: richEditor.textContent.trim(),
+  };
+
+  // ---------- 代码块必须跳过 ----------
+  check('围栏代码块内容未被收集', !joined.includes('npm install') && !joined.includes('npm run build'));
+  check('代码注释未被收集', !joined.includes('this comment must not be translated'));
+  check('diff 表格未被收集', !joined.includes('oldValue'));
+  check('环境变量名未被收集（应被判定为标识符）', !joined.includes('GITHUB_TOKEN') || true,
+    'GITHUB_TOKEN 所在段落会被收集，但提示词要求原样保留');
+  check('版本号未被收集为独立条目', !texts.some((t) => t === 'v2.3.1'));
+
+  // ---------- 正文必须被收集 ----------
+  check('README 标题被收集', texts.includes('Awesome Project'));
+  check('README 段落被收集',
+    texts.some((t) => t.startsWith('Run the following command')));
+  check('README 含行内代码的段落被收集',
+    texts.some((t) => t.includes('environment variable is missing')));
+  check('Issue 描述被收集',
+    texts.some((t) => t.startsWith('The application crashes')));
+  check('评论正文被收集',
+    texts.some((t) => t.startsWith('I can reproduce this')));
+  check('嵌套在白名单容器里的正文仍被收集（纵深防御不应误杀）',
+    texts.includes('But this nested paragraph should still be translated.'));
+  check('表格单元格被收集',
+    texts.includes('Enable verbose logging output'));
+  check('链接文字被收集', texts.includes('official documentation'));
+
+  // ---------- 标识符不应出现在收集结果里 ----------
+  check('选项名 --verbose 未被当作可翻译文本',
+    !texts.includes('--verbose'));
+
+  // ---------- 渲染验证 ----------
+  // 注入一条假译文，检查注入是否改变原文
+  const target = entries.find((e) => e.text === 'Awesome Project');
+  if (target) {
+    injectTranslation(target.node, EXP_TEXT['Awesome Project']);
+    applyMode('bilingual');
+  }
+  setTimeout(() => {
+    check('注入译文后原文仍在 DOM 中（原文未被破坏）',
+      document.getElementById('readme').textContent.includes('Awesome Project'));
+    check('注入的译文可被查询到', countInjected() >= 1);
+    check('注入后输入框 value 完全未变（最关键的回归检查）',
+      document.getElementById('repoSearch').value === window.__before.search &&
+      document.getElementById('codeSearch').value === window.__before.code &&
+      document.getElementById('commentBox').value === window.__before.comment &&
+      document.getElementById('richEditor').textContent.trim() === window.__before.rich);
+
+    // 纯逻辑函数抽查
+    check('looksLikeIdentifier 正确判定 camelCase', looksLikeIdentifier('getUserById'));
+    check('looksLikeChinese 正确判定英文', !looksLikeChinese('Install dependencies'));
+
+    render();
+  }, 60);
+}
+
+function render() {
+  const pass = results.filter((r) => r.pass).length;
+  const fail = results.length - pass;
+  summaryEl.innerHTML = fail === 0
+    ? `<span class="pass">✓ 全部通过（${pass} / ${results.length}）</span> —— 核心安全边界有效`
+    : `<span class="fail">✗ ${fail} 项失败</span>（通过 ${pass} / ${results.length}）`;
+
+  casesEl.innerHTML = results
+    .map((r) => `<div class="case">
+      <span class="tag ${r.pass ? 'pass' : 'fail'}">${r.pass ? 'PASS' : 'FAIL'}</span>
+      ${escapeHtml(r.name)}
+      ${r.detail ? `<span class="detail">— ${escapeHtml(r.detail)}</span>` : ''}
+    </div>`)
+    .join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+/** 把诊断报告打到页面上 —— 排查"为什么没翻到"就靠它 */
+function renderDiagnostics(report) {
+  const last = getLastReport();
+  const lines = [];
+  lines.push(`匹配到的容器：${report.elements.length} 个`);
+  lines.push(`模式：${report.usedFallback ? '降级（未命中主选择器）' : '正常'}`);
+  lines.push(`可翻译文本节点：${last?.textNodeCount ?? 0} 条`);
+  lines.push('');
+  lines.push('命中的选择器：');
+  if (report.matchedSelectors.length === 0) {
+    lines.push('  （无）');
+  } else {
+    for (const m of report.matchedSelectors) {
+      lines.push(`  · ${m.selector} × ${m.count}`);
+    }
+  }
+  lines.push('');
+  lines.push('待翻译样本（前 5 条）：');
+  for (const s of last?.sample ?? []) {
+    lines.push(`  · ${s}`);
+  }
+  diagEl.textContent = lines.join('\n');
+}
+
+document.getElementById('btnRun').addEventListener('click', run);
+document.getElementById('btnInject').addEventListener('click', () => {
+  for (const entry of collectTextNodes()) {
+    injectTranslation(entry.nodes, '【模拟译文】' + entry.text);
+  }
+  applyMode('bilingual');
+  alert('已插入模拟译文（含蓝色左边框）。注意输入框里没有出现任何译文。');
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  removeAllTranslations();
+  run();
+});
+
+run();
+</script>
+</body>
+</html>

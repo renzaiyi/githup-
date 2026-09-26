@@ -1,0 +1,76 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>
+<div class="fake-header">
+  <nav>
+    <span>Code</span><span>Issues</span><span>Pull requests</span><span>Actions</span><span>Settings</span>
+  </nav>
+</div>
+
+<!-- 场景 A：搜索框（最关键的安全测试） -->
+<div class="gh-box">
+  <div class="gh-head">场景 A · 搜索框</div>
+  <div class="gh-body">
+    <input class="search-input" id="repoSearch" type="text"
+           placeholder="Search or jump to..." value="react hooks" />
+    <input class="search-input" id="codeSearch" type="text"
+           placeholder="Search code..." value="useState&lt;T&gt;" />
+    <textarea class="search-input" id="commentBox" rows="2"
+              placeholder="Leave a comment">This PR fixes the memory leak in useEffect</textarea>
+    <div contenteditable="true" class="search-input" id="richEditor" style="margin-top:8px">
+      editable rich text with English words
+    </div>
+  </div>
+</div>
+
+<!-- 场景 B：README 正文 -->
+<div class="gh-box">
+  <div class="gh-head">场景 B · README 正文</div>
+  <div class="gh-body markdown-body" id="readme">
+    <h1>Awesome Project</h1>
+    <p>Run the following command to install dependencies before you start development.</p>
+    <p>This will not work if the <code>GITHUB_TOKEN</code> environment variable is missing.</p>
+    <pre><code>npm install
+npm run build --production
+git commit -m "fix: resolve the memory leak"</code></pre>
+    <p>Feel free to open an issue if you hit any problems during the upgrade.</p>
+    <table>
+      <thead>
+        <tr><th>Option</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>--verbose</td><td>Enable verbose logging output</td></tr>
+        <tr><td>--dry-run</td><td>Print what would be done without doing it</td></tr>
+      </tbody>
+    </table>
+    <p>See the <a href="https://example.com/docs">official documentation</a> for more details.</p>
+  </div>
+</div>
+
+<!-- 场景 C：Issue 正文与评论 -->
+<div class="gh-box">
+  <div class="gh-head">场景 C · Issue 描述与评论</div>
+  <div class="gh-body">
+    <div data-testid="issue-body" class="markdown-body">
+      <p>The application crashes when loading a large configuration file.</p>
+    </div>
+    <div class="comment-body markdown-body" style="border-top:1px solid #d1d9e0;padding-top:10px;margin-top:10px">
+      <p>I can reproduce this on version <code>v2.3.1</code> with a 50 MB file.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 场景 D：必须被跳过的区域 -->
+<div class="gh-box">
+  <div class="gh-head">场景 D · 必须跳过的区域（伪造为白名单容器，检查纵深防御）</div>
+  <div class="gh-body markdown-body" id="exclusionZone">
+    <pre><code>const secret = process.env.API_KEY; // this comment must not be translated</code></pre>
+    <table class="diff-table">
+      <tr><td>- const oldValue = 1;</td><td>+ const newValue = 2;</td></tr>
+    </table>
+    <div class="markdown-body">
+      <p>But this nested paragraph should still be translated.</p>
+    </div>
+  </div>
+</div>
+
+
+</body></html>

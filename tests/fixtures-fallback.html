@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fallback fixture</title></head>
+<body>
+
+<!-- 界面外壳 1：全局导航（必须被排除） -->
+<header class="AppHeader">
+  <nav>
+    <span>Pull requests</span>
+    <span>Issues</span>
+    <span>Marketplace</span>
+    <span>Explore</span>
+  </nav>
+  <input type="text" id="globalSearch" placeholder="Search or jump to..." value="fallback search value" />
+</header>
+
+<!-- 界面外壳 2：仓库头部（必须被排除） -->
+<div id="repository-container-header" class="RepositoryHeader">
+  <button>Watch</button>
+  <button>Fork</button>
+  <button>Star</button>
+  <span>Code</span>
+  <span>About</span>
+</div>
+
+<!-- 界面外壳 3：侧栏与文件树（必须被排除） -->
+<div class="sidebar">
+  <ul aria-labelledby="folders-and-files">
+    <li>src</li>
+    <li>tests</li>
+    <li>README.md</li>
+  </ul>
+</div>
+
+<!-- 正文：没有任何 .markdown-body，迫使扩展走兜底路径 -->
+<main>
+  <article>
+    <p>This paragraph lives inside a plain main element and must be collected by the fallback.</p>
+    <ul>
+      <li>A list item that should also be collected by the fallback.</li>
+    </ul>
+    <blockquote>
+      A quoted sentence that should also be collected.
+    </blockquote>
+    <pre><code>const leaked = "this code must never be translated by the fallback";</code></pre>
+    <p>Another translatable paragraph here.</p>
+  </article>
+</main>
+
+<!-- 界面外壳 4：页脚（必须被排除） -->
+<footer>
+  <span>Terms of Service</span>
+  <span>Privacy Statement</span>
+</footer>
+
+</body>
+</html>

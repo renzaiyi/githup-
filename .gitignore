@@ -1,0 +1,22 @@
+# 依赖与构建产物
+node_modules/
+
+# 验证专用产物（由 npm run build --expose 生成，不进仓库）
+# 正式产物 src/content/bundle.js 是**刻意提交**的：
+# 本项目的卖点是"零构建、加载解压缩即可用"，
+# 所以产物必须随仓库提供，否则 clone 下来无法直接加载。
+src/content/bundle.exposed.js
+
+# 探针输出
+probe-report.json
+*.har
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 日志与临时文件
+*.log
+*.tmp

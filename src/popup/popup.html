@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>GitHub 智能翻译</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="head">
+    <div class="title">GitHub 智能翻译</div>
+    <div class="subtitle" id="pageInfo">读取中…</div>
+  </header>
+
+  <section class="block">
+    <label class="label" for="mode">显示方式</label>
+    <div class="segmented" id="mode">
+      <button type="button" class="seg" data-mode="off">关闭</button>
+      <button type="button" class="seg" data-mode="zh">纯中文</button>
+      <button type="button" class="seg" data-mode="bilingual">双语</button>
+    </div>
+    <p class="hint">双语模式：原文保留，译文紧跟在后面。纯中文模式：隐藏原文。</p>
+  </section>
+
+  <section class="block">
+    <label class="row-check">
+      <input type="checkbox" id="autoTranslate" />
+      <span>打开页面时自动翻译</span>
+    </label>
+    <p class="hint">关闭时需手动点下方「翻译此页」。关掉能显著省钱。</p>
+  </section>
+
+  <section class="block">
+    <label class="label" for="apiKey">DeepSeek API Key</label>
+    <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off" spellcheck="false" />
+    <div class="grid">
+      <div>
+        <label class="label small" for="model">模型</label>
+        <input type="text" id="model" placeholder="deepseek-flash" spellcheck="false" />
+      </div>
+      <div>
+        <label class="label small" for="baseUrl">接口地址</label>
+        <input type="text" id="baseUrl" placeholder="https://api.deepseek.com/v1" spellcheck="false" />
+      </div>
+    </div>
+    <div class="btn-row">
+      <button type="button" id="save" class="btn primary">保存</button>
+      <button type="button" id="test" class="btn">测试连接</button>
+    </div>
+  </section>
+
+  <section class="block">
+    <label class="label" for="glossary">术语表（每行一条：英文 =&gt; 中文）</label>
+    <textarea id="glossary" rows="5" spellcheck="false"
+      placeholder="repository => 仓库&#10;pull request => 拉取请求&#10;issue => 议题&#10;fork => 复刻"></textarea>
+    <p class="hint">留空也可以，会自动使用通用技术译法。</p>
+  </section>
+
+  <section class="block">
+    <div class="btn-row">
+      <button type="button" id="translateNow" class="btn primary wide">翻译此页</button>
+    </div>
+    <div class="btn-row">
+      <button type="button" id="reset" class="btn wide">复原页面</button>
+      <button type="button" id="clearCache" class="btn wide">清空缓存</button>
+    </div>
+    <div class="btn-row">
+      <button type="button" id="diagnose" class="btn wide">诊断（不发请求）</button>
+    </div>
+  </section>
+
+  <div id="status" class="status" data-level="info">就绪</div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

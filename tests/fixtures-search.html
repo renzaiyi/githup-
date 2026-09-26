@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Repository search results · GitHub</title></head>
+<body>
+
+<!-- 搜索框（界面外壳，必须不被收集） -->
+<header class="AppHeader">
+  <input type="text" id="searchInput" placeholder="Search or jump to..." value="react hooks" />
+</header>
+
+<!--
+  搜索结果列表。结构依 2026-09-22 真机实测还原：
+    <div class="List-module__List__j9yVV" data-testid="results-list">
+      └ <div class="Result-module__Result__I0WVD">
+          └ <div class="Repositories-module__resultContent__X93zw">
+              ├ <div class="Content-module__Content__EMhAj">     ← 描述在这里
+              │   └ <span class="search-match">描述前半</span> <em>高亮词</em> <span class="search-match">描述后半</span>
+              └ <ul class="Footer-module__footer__rWx13">        ← 语言/星数/时间/按钮
+-->
+<div class="List-module__List__j9yVV" data-testid="results-list">
+
+  <!-- 结果项 1：描述被高亮词切成三段，应聚合成一句 -->
+  <div class="Result-module__Result__I0WVD">
+    <div class="Repositories-module__resultRow__VAQn0">
+      <div class="Repositories-module__resultContent__X93zw">
+        <h3 class="search-title">
+          <a href="/facebook/react"><span class="search-match">facebook/</span><em>react</em></a>
+        </h3>
+        <div class="Content-module__Content__EMhAj">
+          <span class="search-match SearchMatchText-module__searchMatchText__aiO59">The library for web and native</span>
+          <em>react</em>
+          <span class="search-match SearchMatchText-module__searchMatchText__aiO59">user interfaces.</span>
+        </div>
+        <ul class="Footer-module__footer__rWx13">
+          <li class="Footer-module__footerItem__H6aUw"><span>JavaScript</span></li>
+          <li class="Footer-module__footerItem__H6aUw"><span>251k</span></li>
+          <li class="Footer-module__footerItem__H6aUw"><span>Updated</span><span>yesterday</span></li>
+          <li class="Footer-module__footerItem__H6aUw">
+            <a class="TopicLabel-module__topicLabel__WAFkQ prc-Link-Link-9ZwDx" href="/topics/javascript">javascript</a>
+          </li>
+          <li class="Footer-module__footerItem__H6aUw">
+            <button class="prc-Button-ButtonBase"><span class="prc-Button-Label-FWkx3">Star</span></button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果项 2：普通描述（无高亮） -->
+  <div class="Result-module__Result__I0WVD">
+    <div class="Repositories-module__resultRow__VAQn0">
+      <div class="Repositories-module__resultContent__X93zw">
+        <h3 class="search-title">
+          <a href="/typescript-cheatsheets/react"><span class="search-match">typescript-cheatsheets/</span><em>react</em></a>
+        </h3>
+        <div class="Content-module__Content__EMhAj">
+          <span class="search-match SearchMatchText-module__searchMatchText__aiO59">Cheatsheets for experienced React developers getting started with TypeScript</span>
+        </div>
+        <ul class="Footer-module__footer__rWx13">
+          <li class="Footer-module__footerItem__H6aUw"><span>TypeScript</span></li>
+          <li class="Footer-module__footerItem__H6aUw"><span>Updated 16 days ago</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 结果列表之外的界面区域，绝不能翻 -->
+<nav class="search-sidebar">
+  <span>Filter by</span>
+  <span>Languages</span>
+  <span>Advanced search</span>
+</nav>
+
+</body>
+</html>
