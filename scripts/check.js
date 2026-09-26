@@ -10,9 +10,11 @@
  *   4. 图标文件存在且是合法 PNG
  *   5. 提示词版本号已定义
  */
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -151,9 +153,7 @@ if (riskyHits === 0) ok('未发现危险模式');
 console.log('\n=== 7. HTML 内联脚本语法 ===');
 // 自测页面里的 module 脚本是浏览器直接执行的，语法错误只有打开页面才会发现。
 // 这里把它抽出来交给 node --check，提前拦住。
-import { execFileSync } from 'node:child_process';
-import { writeFileSync, unlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// （用到的 execFileSync / writeFileSync / unlinkSync / tmpdir 统一在文件顶部导入）
 
 const htmlFiles = [
   join(ROOT, 'tests/self-test.html'),
